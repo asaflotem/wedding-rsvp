@@ -117,7 +117,7 @@
   }
 
   /* attendance toggle */
-  .toggle-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .toggle-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
   .toggle-btn{
     display:flex;flex-direction:column;align-items:center;gap:6px;
     padding:16px 8px;border-radius:16px;border:2px solid #d8cba3;
@@ -131,6 +131,11 @@
     background:linear-gradient(180deg,#eee7f4,#e3d9ee);
     border-color:var(--plum);color:var(--plum-dark);
     box-shadow:0 6px 14px -6px rgba(74,63,92,.4);
+  }
+  .toggle-btn.selected.chuppah{
+    background:linear-gradient(180deg,#f7efd9,#eee1bc);
+    border-color:var(--gold);color:var(--plum-dark);
+    box-shadow:0 6px 14px -6px rgba(184,145,47,.35);
   }
   .toggle-btn.selected.no{
     background:#efe9da;border-color:var(--olive);color:var(--olive-dark);
@@ -260,6 +265,10 @@
             <svg viewBox="0 0 40 40" fill="none"><g fill="currentColor"><circle cx="16" cy="13" r="4.2"/><circle cx="24" cy="13" r="4.2"/><circle cx="20" cy="20.5" r="4.2"/><circle cx="11" cy="20.5" r="3.6"/><circle cx="29" cy="20.5" r="3.6"/><circle cx="20" cy="28" r="3.6"/></g></svg>
             <span data-i18n="attendYes">מגיעים בשמחה!</span>
           </button>
+          <button type="button" class="toggle-btn chuppah" id="btnChuppah">
+            <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 31V16M32 31V16M8 17h24M12 17l8-7 8 7"/><path d="M13 31V21M27 31V21" opacity=".7"/></svg>
+            <span data-i18n="attendChuppah">מגיע לחופה בלבד</span>
+          </button>
           <button type="button" class="toggle-btn no" id="btnNo">
             <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 8c-6 4-6 10 0 24" fill="none"/><path d="M20 14c-4-3-9-2-9 2s5 4 9 1" fill="none"/><path d="M20 22c4-3 9-2 9 2s-5 4-9 1" fill="none"/></svg>
             <span data-i18n="attendNo">לא נוכל להגיע</span>
@@ -277,11 +286,8 @@
       <div class="field" id="dietaryField" style="display:none;">
         <label for="dietaryInput" data-i18n="dietaryLabel">העדפת כשרות / אוכל</label>
         <select id="dietaryInput">
-          <option value="ללא העדפה מיוחדת" data-i18n="dietNone">ללא העדפה מיוחדת</option>
-          <option value="מהדרין" data-i18n="dietMehadrin">מהדרין</option>
-          <option value="צמחוני" data-i18n="dietVeg">צמחוני</option>
-          <option value="טבעוני" data-i18n="dietVegan">טבעוני</option>
-          <option value="אלרגיה/רגישות" data-i18n="dietAllergy">אלרגיה / רגישות (נא לפרט בהערה)</option>
+          <option value="מהדרין - חלבי בכשרות רבנות בית שמש" data-i18n="dietMehadrinDairy">מהדרין - חלבי בכשרות רבנות בית שמש</option>
+          <option value="חלב - כשרות רבנות בית שמש" data-i18n="dietDairy">חלב - כשרות רבנות בית שמש</option>
         </select>
       </div>
 
@@ -402,6 +408,7 @@ async function sendRsvpToGoogle(payload){
   body.set('action', 'submit');
   body.set('name', payload.name || '');
   body.set('attending', payload.attending ? 'true' : 'false');
+  body.set('attendanceType', payload.attendanceType || (payload.attending ? 'full' : 'no'));
   body.set('count', String(payload.attending ? (payload.count || 1) : 0));
   body.set('dietary', payload.attending ? (payload.dietary || '') : '');
   body.set('note', payload.note || '');
@@ -459,14 +466,12 @@ const I18N = {
     foundBanner: 'כבר קיבלנו תשובה בשם הזה — אפשר לעדכן אותה ולשלוח שוב.',
     attendQuestion: 'נשמח לדעת - תגיעו?',
     attendYes: 'מגיעים בשמחה!',
+    attendChuppah: 'מגיע לחופה בלבד',
     attendNo: 'לא נוכל להגיע',
     stepperLabel: 'כמה תגיעו יחד (כולל אתכם)?',
     dietaryLabel: 'העדפת כשרות / אוכל',
-    dietNone: 'ללא העדפה מיוחדת',
-    dietMehadrin: 'מהדרין',
-    dietVeg: 'צמחוני',
-    dietVegan: 'טבעוני',
-    dietAllergy: 'אלרגיה / רגישות (נא לפרט בהערה)',
+    dietMehadrinDairy: 'מהדרין - חלבי בכשרות רבנות בית שמש',
+    dietDairy: 'חלב - כשרות רבנות בית שמש',
     noteLabel: 'רוצים להוסיף הערה? (לא חובה)',
     notePlaceholder: 'לדוגמה: נגיע עם כיסא תינוק / נשמח לשבת ליד...',
     submitDefault: 'שליחת אישור הגעה',
@@ -479,6 +484,8 @@ const I18N = {
     editLink: 'רוצים לעדכן את התשובה? לחצו כאן',
     thankYouTitleYes: 'איזה כיף!',
     thankYouTextYes: (n)=> 'רשמנו שתגיעו ' + n + (n>1 ? ' אנשים' : ' איש') + '. מחכים לכם ב-14.10.2026 ביקבי עמק האלה 🍇',
+    thankYouTitleChuppah: 'מחכים לכם בחופה!',
+    thankYouTextChuppah: (n)=> 'רשמנו שתגיעו לחופה בלבד, ' + n + (n>1 ? ' אנשים' : ' איש') + '. נתראה בשמחה 🍇',
     thankYouTitleNo: 'תודה שעדכנתם',
     thankYouTextNo: 'חבל שלא תוכלו להגיע — ניפגש בהזדמנות אחרת. תודה על העדכון! 🌿',
     shareEyebrow: 'מכירים עוד מוזמנים? עזרו לנו לאסוף תשובות :)',
@@ -516,14 +523,12 @@ const I18N = {
     foundBanner: "We already have a response under this name — feel free to update it and resubmit.",
     attendQuestion: 'Will you be joining us?',
     attendYes: 'Joyfully attending!',
+    attendChuppah: 'Chuppah only',
     attendNo: "Can't make it",
     stepperLabel: 'How many of you will attend (including you)?',
     dietaryLabel: 'Dietary / kosher preference',
-    dietNone: 'No special preference',
-    dietMehadrin: 'Mehadrin (strict kosher)',
-    dietVeg: 'Vegetarian',
-    dietVegan: 'Vegan',
-    dietAllergy: 'Allergy / sensitivity (please specify in notes)',
+    dietMehadrinDairy: 'Mehadrin — dairy, Beit Shemesh Rabbinate kosher certification',
+    dietDairy: 'Dairy — Beit Shemesh Rabbinate kosher certification',
     noteLabel: 'Want to add a note? (optional)',
     notePlaceholder: "e.g. bringing a baby chair / would love to sit near...",
     submitDefault: 'Send RSVP',
@@ -536,6 +541,8 @@ const I18N = {
     editLink: 'Want to update your response? Click here',
     thankYouTitleYes: 'Wonderful!',
     thankYouTextYes: (n)=> "We've got you down for " + n + (n>1 ? ' people' : ' person') + ". Can't wait to see you on 10.14.2026 at Ella Valley Vineyard 🍇",
+    thankYouTitleChuppah: 'See you at the chuppah!',
+    thankYouTextChuppah: (n)=> "We've got you down for the chuppah only, " + n + (n>1 ? ' people' : ' person') + '. See you there 🍇',
     thankYouTitleNo: 'Thanks for letting us know',
     thankYouTextNo: "Sorry you can't make it — hope to see you soon. Thanks for the update! 🌿",
     shareEyebrow: 'Know other guests? Help us collect responses :)',
@@ -618,11 +625,13 @@ function showToast(msg){
 
 /* ---------- form state ---------- */
 let attending = null; // true / false
+let attendanceType = null; // full / chuppah / no
 let count = 1;
 let editingExisting = false;
 
 const nameInput = document.getElementById('nameInput');
 const btnYes = document.getElementById('btnYes');
+const btnChuppah = document.getElementById('btnChuppah');
 const btnNo = document.getElementById('btnNo');
 const stepper = document.getElementById('stepper');
 const stepperLabel = document.getElementById('stepperLabel');
@@ -635,21 +644,24 @@ const foundBanner = document.getElementById('foundBanner');
 const formCard = document.getElementById('formCard');
 const thankyouCard = document.getElementById('thankyouCard');
 
-function setAttending(val){
-  attending = val;
-  if(val === true && count < 1) count = 1;
+function setAttendance(type){
+  attendanceType = type;
+  attending = type === 'full' || type === 'chuppah';
+  if(attending && count < 1) count = 1;
+  if(type === 'no') count = 0;
   countVal.textContent = Math.max(count, 1);
-  btnYes.classList.toggle('selected', val === true);
-  btnYes.classList.toggle('yes', true);
-  btnNo.classList.toggle('selected', val === false);
-  btnNo.classList.toggle('no', true);
-  const show = val === true;
-  stepper.style.display = show ? 'flex' : 'none';
-  stepperLabel.style.display = show ? 'block' : 'none';
-  document.getElementById('dietaryField').style.display = show ? 'block' : 'none';
+  btnYes.classList.toggle('selected', type === 'full');
+  btnChuppah.classList.toggle('selected', type === 'chuppah');
+  btnNo.classList.toggle('selected', type === 'no');
+  const showCount = attending;
+  stepper.style.display = showCount ? 'flex' : 'none';
+  stepperLabel.style.display = showCount ? 'block' : 'none';
+  document.getElementById('dietaryField').style.display = type === 'full' ? 'block' : 'none';
 }
-btnYes.addEventListener('click', ()=>setAttending(true));
-btnNo.addEventListener('click', ()=>{setAttending(false); count = 0;});
+function setAttending(val){ setAttendance(val ? 'full' : 'no'); }
+btnYes.addEventListener('click', ()=>setAttendance('full'));
+btnChuppah.addEventListener('click', ()=>setAttendance('chuppah'));
+btnNo.addEventListener('click', ()=>setAttendance('no'));
 
 document.getElementById('plusBtn').addEventListener('click', ()=>{
   count = Math.min(count+1, 20);
@@ -671,11 +683,13 @@ async function tryLoadExisting(){
     if(res && res.value){
       const data = JSON.parse(res.value);
       editingExisting = true;
-      setAttending(!!data.attending);
+      const savedAttendanceType = data.attendanceType || (data.attending ? 'full' : 'no');
+      setAttendance(savedAttendanceType);
       count = data.attending ? (data.count || 1) : 0;
       countVal.textContent = Math.max(count,1);
       noteInput.value = data.note || '';
-      dietaryInput.value = data.dietary || 'ללא העדפה מיוחדת';
+      const savedDietary = data.dietary || '';
+      dietaryInput.value = [...dietaryInput.options].some(o=>o.value===savedDietary) ? savedDietary : 'מהדרין - חלבי בכשרות רבנות בית שמש';
       foundBanner.style.display = 'block';
       foundBanner.textContent = t('foundBanner');
       submitBtnLabelSync();
@@ -711,8 +725,9 @@ submitBtn.addEventListener('click', async ()=>{
     name: name,
     category: matchGuest(name) || 'לא ברשימה',
     attending: attending,
+    attendanceType: attendanceType || (attending ? 'full' : 'no'),
     count: attending ? count : 0,
-    dietary: attending ? dietaryInput.value : '',
+    dietary: attendanceType === 'full' ? dietaryInput.value : '',
     note: noteInput.value.trim(),
     ts: Date.now()
   };
@@ -740,7 +755,11 @@ function showThankYou(payload){
   const title = document.getElementById('thankyouTitle');
   const text = document.getElementById('thankyouText');
   thankyouCard.dataset.lastPayload = JSON.stringify(payload);
-  if(payload.attending){
+  if(payload.attendanceType === 'chuppah'){
+    icon.innerHTML = '<path d="M8 31V16M32 31V16M8 17h24M12 17l8-7 8 7M13 31V21M27 31V21" stroke="#b8912f" stroke-width="1.7" fill="none"/>';
+    title.textContent = t('thankYouTitleChuppah');
+    text.textContent = t('thankYouTextChuppah')(payload.count);
+  } else if(payload.attending){
     icon.innerHTML = '<g fill="#4a3f5c"><circle cx="16" cy="12" r="5"/><circle cx="26" cy="12" r="5"/><circle cx="21" cy="21" r="5"/><circle cx="10" cy="21" r="4.2"/><circle cx="32" cy="21" r="4.2"/><circle cx="21" cy="30" r="4.2"/></g>';
     title.textContent = t('thankYouTitleYes');
     text.textContent = t('thankYouTextYes')(payload.count);
